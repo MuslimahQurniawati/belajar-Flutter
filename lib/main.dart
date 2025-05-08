@@ -1,148 +1,153 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert'; // Untuk encode/decode data
 
-void main() {
-  runApp(
-    const MaterialApp(home: TodoHomePage(), debugShowCheckedModeBanner: false),
-  );
-}
+void main() => runApp(ToDoApp());
 
-class TodoHomePage extends StatefulWidget {
-  const TodoHomePage({super.key});
-
+class ToDoApp extends StatelessWidget {
   @override
-  _TodoHomePageState createState() => _TodoHomePageState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'To-Do List Sederhana',
+      theme: ThemeData(primarySwatch: Colors.teal),
+      home: ToDoHomePage(),
+    );
+  }
 }
 
-class _TodoHomePageState extends State<TodoHomePage> {
-  final List<String> _todos = [];
-  final List<String> _filteredTodos = []; // Daftar tugas yang difilter
-  final TextEditingController _controller = TextEditingController();
-  final TextEditingController _searchController =
-      TextEditingController(); // Controller pencarian
+class ToDoHomePage extends StatefulWidget {
+  @override
+  _ToDoHomePageState createState() => _ToDoHomePageState();
+}
+
+class _ToDoHomePageState extends State<ToDoHomePage> {
+  final List<Map<String, dynamic>> _tasks = [];
+  final TextEditingController _taskController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+
+  String _searchQuery = '';
+
+  void _addTask() {
+    String text = _taskController.text.trim();
+    if (text.isNotEmpty) {
+      setState(() {
+        _tasks.add({'text': text, 'isDone': false});
+        _taskController.clear();
+      });
+    }
+  }
+
+  void _deleteTask(int index) {
+    setState(() {
+      _tasks.removeAt(index);
+    });
+  }
+
+  void _toggleTask(int index) {
+    setState(() {
+      _tasks[index]['isDone'] = !_tasks[index]['isDone'];
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    _loadTodos();
-    _searchController.addListener(_filterTodos); // Pantau input search
-  }
-
-  Future<void> _loadTodos() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? todosString = prefs.getString('todos');
-    if (todosString != null) {
-      final todosList = List<String>.from(jsonDecode(todosString));
+    _searchController.addListener(() {
       setState(() {
-        _todos.addAll(todosList);
-        _filteredTodos.addAll(todosList);
+        _searchQuery = _searchController.text.toLowerCase();
       });
-    }
-  }
-
-  Future<void> _saveTodos() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('todos', jsonEncode(_todos));
-  }
-
-  void _addTodo() {
-    final text = _controller.text;
-    if (text.isNotEmpty) {
-      setState(() {
-        _todos.add(text);
-        _controller.clear();
-      });
-      _saveTodos();
-      _filterTodos(); // Update tampilan setelah tambah
-    }
-  }
-
-  void _removeTodo(int index) {
-    final todoToRemove = _filteredTodos[index];
-    setState(() {
-      _todos.remove(todoToRemove);
-    });
-    _saveTodos();
-    _filterTodos(); // Update tampilan setelah hapus
-  }
-
-  void _filterTodos() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredTodos
-          ..clear()
-          ..addAll(_todos);
-      } else {
-        _filteredTodos
-          ..clear()
-          ..addAll(_todos.where((todo) => todo.toLowerCase().contains(query)));
-      }
     });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _taskController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final filteredTasks =
+        _tasks.where((task) {
+          return task['text'].toLowerCase().contains(_searchQuery);
+        }).toList();
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Daftar Tugas')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
+      appBar: AppBar(
+        title: Text(
+          'To-Do List',
+          style: TextStyle(fontFamily: 'Quicksand-VariableFont_wght'),
+        ),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.all(12),
+            child: TextField(
               controller: _searchController,
-              decoration: const InputDecoration(
-                labelText: 'Cari Tugas',
+              decoration: InputDecoration(
+                labelText: 'Cari tugas...',
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 16),
-            Row(
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      labelText: 'Tambahkan Tugas',
+                    controller: _taskController,
+                    decoration: InputDecoration(
+                      labelText: 'Tambah tugas...',
                       border: OutlineInputBorder(),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _addTodo,
-                  child: const Text('Tambah'),
-                ),
+                SizedBox(width: 10),
+                ElevatedButton(onPressed: _addTask, child: Text('Tambah')),
               ],
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _filteredTodos.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    child: ListTile(
-                      title: Text(_filteredTodos[index]),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => _removeTodo(index),
-                      ),
+          ),
+          Expanded(
+            child:
+                filteredTasks.isEmpty
+                    ? Center(child: Text('Tidak ada tugas yang cocok.'))
+                    : ListView.builder(
+                      itemCount: filteredTasks.length,
+                      itemBuilder: (context, index) {
+                        final task = filteredTasks[index];
+                        final originalIndex = _tasks.indexWhere(
+                          (t) => t['text'] == task['text'],
+                        );
+
+                        return Card(
+                          child: ListTile(
+                            leading: Checkbox(
+                              value: task['isDone'],
+                              onChanged: (_) => _toggleTask(originalIndex),
+                            ),
+                            title: Text(
+                              task['text'],
+                              style: TextStyle(
+                                decoration:
+                                    task['isDone']
+                                        ? TextDecoration.lineThrough
+                                        : TextDecoration.none,
+                                color:
+                                    task['isDone'] ? Colors.grey : Colors.black,
+                              ),
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _deleteTask(originalIndex),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
