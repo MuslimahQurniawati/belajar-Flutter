@@ -17,12 +17,13 @@ class AddTaskPage extends StatelessWidget {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              child: Text('Simpan'),
               onPressed: () {
-                final task = taskController.text.trim;
-                // Belum ada fungsi simpan - kita akan buat nanti
-                Navigator.pop(context, task);
+                final taskText = taskController.text.trim();
+                if (taskText.isNotEmpty) {
+                  Navigator.pop(context, taskText); // Kirim data kembali
+                }
               },
+              child: Text('Simpan'),
             ),
           ],
         ),

@@ -17,10 +17,25 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _deleteTask(int index) {
+    setState(() {
+      _tasks.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('To-Do List')),
+      appBar: AppBar(
+        title: Text(
+          'To-Do List',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 24,
+            fontFamily: 'Quicksand-VariableFont_wght',
+          ),
+        ),
+      ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -29,12 +44,23 @@ class _HomePageState extends State<HomePage> {
               decoration: BoxDecoration(color: Colors.teal),
               child: Text(
                 'Menu',
-                style: TextStyle(color: Colors.white, fontSize: 24),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontFamily: 'Quicksand-VariableFont_wght',
+                ),
               ),
             ),
             ListTile(
               leading: Icon(Icons.add),
-              title: Text('Tambah Tugas'),
+              title: Text(
+                'Tambah Tugas',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 20,
+                  fontFamily: 'Quicksand-VariableFont_wght',
+                ),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _navigateToAddTask();
@@ -42,7 +68,14 @@ class _HomePageState extends State<HomePage> {
             ),
             ListTile(
               leading: Icon(Icons.info),
-              title: Text('Tentang Aplikasi'),
+              title: Text(
+                'Tentang Aplikasi',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 20,
+                  fontFamily: 'Quicksand-VariableFont_wght',
+                ),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.pushNamed(context, '/about');
